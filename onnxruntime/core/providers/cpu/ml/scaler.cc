@@ -85,11 +85,13 @@ common::Status ScalerOp<T>::Compute(OpKernelContext* context) const {
   int64_t stride = x_dims.size() == 1 ? x_dims[0] : x_dims[1];
   if (static_cast<int64_t>(offset_.size()) == stride &&
       static_cast<int64_t>(scale_.size()) == stride) {
-    for (size_t i = 0; i < x_size; i++) {
+#pragma omp parallel for
+    for (int i = 0; i < static_cast<int>(x_size); i++) {
       y_data[i] = static_cast<float>((x_data[i] - offset_[i % stride]) * scale_[i % stride]);
     }
   } else if (offset_.size() == 1 && scale_.size() == 1) {
-    for (size_t i = 0; i < x_size; i++) {
+#pragma omp parallel for
+    for (int i = 0; i < static_cast<int>(x_size); i++) {
       y_data[i] = static_cast<float>((x_data[i] - offset_[0]) * scale_[0]);
     }
   } else {
