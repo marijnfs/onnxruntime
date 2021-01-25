@@ -111,12 +111,13 @@ static int CompactInputIndicesDims(
   eff_indices_dims.push_back(indices_dims[axis]);
   int new_axis = (int)(eff_input_dims.size());
   if (axis > 0) {
-    if (could_continue_merge) {
+    if (!could_continue_merge) {
       eff_input_dims.push_back(1);
       eff_indices_dims.push_back(1);
+      could_continue_merge = true;
     }
     int i = axis - 1;
-    for (; i >= 0 && could_continue_merge; --i) {
+    for (; i >= 0; --i) {
       if (input_dims[i] == indices_dims[i]) {
         eff_input_dims.back() *= input_dims[i];
         eff_indices_dims.back() *= indices_dims[i];
@@ -130,13 +131,13 @@ static int CompactInputIndicesDims(
       eff_indices_dims.pop_back();
     }
     if (!could_continue_merge) {
-      for (; i >= 0 && could_continue_merge; --i) {
+      for (; i >= 0; --i) {
         eff_input_dims.push_back(input_dims[i]);
         eff_indices_dims.push_back(indices_dims[i]);
       }
     }
   }
-  new_axis = eff_input_dims.size() - new_axis;
+  new_axis = static_cast<int>(eff_input_dims.size()) - new_axis;
   std::reverse(eff_input_dims.begin(), eff_input_dims.end());
   std::reverse(eff_indices_dims.begin(), eff_indices_dims.end());
   return new_axis;
@@ -154,7 +155,7 @@ Status ScatterElementsImpl2D(
     T* output_data,
     const FuncT& func) {
   int blocksPerGrid = gsl::narrow_cast<int>(CeilDiv(indices_size, GridDim::maxThreadsPerBlock));
-  fast_divmod indices_stride_row(indices_dims[1]);
+  fast_divmod indices_stride_row(static_cast<int>(indices_dims[1]));
   if (axis == 0) {
     _ScatterElementsKernel2D<T, Tin, true, FuncT><<<blocksPerGrid, GridDim::maxThreadsPerBlock, 0>>>(
         gsl::narrow_cast<int>(input_dims[0]), input_data,
